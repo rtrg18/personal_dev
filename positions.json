@@ -48,4 +48,25 @@
     "currency": "SGD",
     "brokerage": "CDP"
   },
+    {
+    "ticker": "S63.SI",
+    "quantity": 100,
+    "avg_cost": 6.62,
+    "currency": "SGD",
+    "brokerage": "moomoo"
+  },
+    {
+    "ticker": "OPEN",
+    "quantity": 100,
+    "avg_cost": 8.678,
+    "currency": "USD",
+    "brokerage": "moomoo"
+  }
+    {
+    "ticker": "TNXP",
+    "quantity": 120,
+    "avg_cost": 24.633,
+    "currency": "USD",
+    "brokerage": "moomoo"
+  }
 ]
