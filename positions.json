@@ -1,0 +1,51 @@
+[
+    {
+    "ticker": "VWRA.L",
+    "quantity": 186.1105,
+    "avg_cost": 166.53,
+    "currency": "USD",
+    "brokerage": "IBKR"
+  },
+    {
+    "ticker": "NVDA",
+    "quantity": 58,
+    "avg_cost": 184.433,
+    "currency": "USD",
+    "brokerage": "moomoo"
+  },
+    {
+    "ticker": "AMD",
+    "quantity": 15,
+    "avg_cost": 225.677,
+    "currency": "USD",
+    "brokerage": "moomoo"
+  },
+    {
+    "ticker": "HSBC",
+    "quantity": 30,
+    "avg_cost": 69.42,
+    "currency": "USD",
+    "brokerage": "moomoo"
+  },
+    {
+    "ticker": "INTC",
+    "quantity": 20,
+    "avg_cost": 20.05,
+    "currency": "USD",
+    "brokerage": "moomoo"
+  },
+    {
+    "ticker": "GOOG",
+    "quantity": 10,
+    "avg_cost": 202.60,
+    "currency": "USD",
+    "brokerage": "moomoo"
+  },
+    {
+    "ticker": "O39.SI",
+    "quantity": 380,
+    "avg_cost": 14.45,
+    "currency": "SGD",
+    "brokerage": "CDP"
+  },
+]
