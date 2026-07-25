@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Iron Log — Beginner Strength Tracker</title>
+<style>
+  :root{
+    --bg:#101214;
+    --surface:#1a1d21;
+    --surface-2:#22262b;
+    --border:#2c3137;
+    --text:#eae7e1;
+    --text-dim:#8a8f96;
+    --steel:#5b7a99;
+    --steel-bright:#7fa3c4;
+    --iron-red:#b23a3a;
+    --plate-yellow:#c9a227;
+    --plate-green:#4f7d5c;
+    --plate-chrome:#9aa1a8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+  body{padding-bottom:84px; min-height:100vh;}
+
+  .num{font-family:ui-monospace,'SF Mono',Consolas,'Roboto Mono',monospace; font-variant-numeric:tabular-nums;}
+  .stamp{
+    font-weight:800; text-transform:uppercase; letter-spacing:0.02em;
+    font-stretch:condensed;
+  }
+
+  header{
+    padding:22px 18px 16px; border-bottom:1px solid var(--border);
+    display:flex; flex-direction:column; gap:2px;
+  }
+  header .eyebrow{font-size:11px; color:var(--steel-bright); letter-spacing:0.12em; text-transform:uppercase; font-weight:700;}
+  header h1{margin:0; font-size:22px; letter-spacing:-0.01em;}
+  header .sub{font-size:13px; color:var(--text-dim); margin-top:2px;}
+
+  main{padding:16px 14px 20px; max-width:520px; margin:0 auto;}
+
+  .day-banner{
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(135deg, var(--surface-2), var(--surface));
+    border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:16px;
+  }
+  .day-banner .label{font-size:12px; color:var(--text-dim); letter-spacing:0.08em; text-transform:uppercase;}
+  .day-banner .workout-letter{font-size:34px; font-weight:800; margin-top:2px;}
+  .day-banner .streak{text-align:right; font-size:12px; color:var(--text-dim);}
+  .day-banner .streak .count{font-size:20px; color:var(--plate-yellow); font-weight:800; display:block;}
+
+  .lift-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:16px; margin-bottom:12px;
+  }
+  .lift-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+  .lift-name{font-size:16px; font-weight:700;}
+  .lift-scheme{font-size:12px; color:var(--text-dim);}
+
+  .lift-body{display:flex; gap:14px; align-items:flex-start;}
+  .pictogram{
+    flex-shrink:0; width:58px; height:58px; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:10px; padding:6px;
+  }
+  .pictogram svg{width:100%; height:100%; display:block;}
+  .lift-main{flex:1; min-width:0;}
+
+  .form-link{
+    display:inline-flex; align-items:center; gap:6px; margin-top:10px;
+    font-size:12px; font-weight:700; color:var(--iron-red); text-decoration:none;
+    background:rgba(178,58,58,0.1); border:1px solid rgba(178,58,58,0.3);
+    padding:7px 12px; border-radius:8px;
+  }
+  .form-link .play-icon{
+    width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent;
+    border-left:8px solid var(--iron-red);
+  }
+
+  .plate-bar{display:flex; align-items:center; gap:6px; margin:12px 0; min-height:34px;}
+  .bar-line{flex:1; height:6px; background:var(--plate-chrome); border-radius:3px; position:relative;}
+  .plates{display:flex; gap:2px;}
+  .plate{border-radius:3px; width:10px; display:flex; align-items:center; justify-content:center;}
+  .plate.p25{height:34px; background:var(--iron-red);}
+  .plate.p20{height:30px; background:var(--steel);}
+  .plate.p15{height:26px; background:var(--plate-yellow);}
+  .plate.p10{height:22px; background:var(--plate-green);}
+  .plate.p5{height:18px; background:var(--text);}
+  .plate.p2_5{height:14px; background:#333;}
+  .plate.p1_25{height:11px; background:var(--plate-chrome);}
+
+  .weight-row{display:flex; align-items:center; gap:10px; margin-top:6px;}
+  .weight-input-wrap{display:flex; align-items:baseline; gap:6px;}
+  .weight-input{
+    background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+    font-size:26px; font-weight:800; width:88px; padding:6px 8px; border-radius:8px;
+    font-family:ui-monospace,'SF Mono',Consolas,monospace;
+  }
+  .weight-input:focus{outline:2px solid var(--steel-bright); border-color:transparent;}
+  .unit{color:var(--text-dim); font-size:14px;}
+  .suggested-tag{font-size:11px; color:var(--plate-green); margin-top:4px;}
+
+  .toggle-row{display:flex; gap:8px; margin-top:12px;}
+  .toggle-btn{
+    flex:1; padding:12px 8px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--text-dim); font-weight:700; font-size:13px;
+    text-transform:uppercase; letter-spacing:0.03em; cursor:pointer;
+  }
+  .toggle-btn.active-hit{background:var(--plate-green); color:#fff; border-color:var(--plate-green);}
+  .toggle-btn.active-miss{background:var(--iron-red); color:#fff; border-color:var(--iron-red);}
+
+  .bw-card .toggle-row{margin-top:6px;}
+  .bw-target{font-size:13px; color:var(--text-dim);}
+
+  .save-btn{
+    width:100%; padding:16px; margin-top:8px; border:none; border-radius:14px;
+    background:var(--steel-bright); color:#0d1115; font-weight:800; font-size:15px;
+    text-transform:uppercase; letter-spacing:0.04em; cursor:pointer;
+  }
+  .save-btn:active{opacity:0.85;}
+  .save-btn:disabled{background:var(--border); color:var(--text-dim);}
+
+  .deload-note{
+    font-size:12px; color:var(--plate-yellow); background:rgba(201,162,39,0.1);
+    border:1px solid rgba(201,162,39,0.3); border-radius:8px; padding:8px 10px; margin-top:10px;
+  }
+
+  /* History */
+  .pr-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;}
+  .pr-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px;}
+  .pr-card .pr-name{font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em;}
+  .pr-card .pr-val{font-size:24px; font-weight:800; margin-top:4px;}
+  .pr-card .pr-val .u{font-size:13px; color:var(--text-dim); font-weight:600;}
+
+  .session-item{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:14px 16px; margin-bottom:10px;
+  }
+  .session-item .s-head{display:flex; justify-content:space-between; font-size:13px; color:var(--text-dim); margin-bottom:8px;}
+  .session-item .s-head .w-letter{color:var(--steel-bright); font-weight:800;}
+  .session-lifts{display:flex; flex-direction:column; gap:4px;}
+  .session-lift-row{display:flex; justify-content:space-between; font-size:14px;}
+  .session-lift-row .name{color:var(--text-dim);}
+  .session-lift-row .res{font-weight:700;}
+  .session-lift-row .res.hit{color:var(--plate-green);}
+  .session-lift-row .res.miss{color:var(--iron-red);}
+
+  .empty-state{text-align:center; padding:40px 20px; color:var(--text-dim);}
+  .empty-state .big{font-size:15px; margin-bottom:6px; color:var(--text);}
+
+  nav.tabbar{
+    position:fixed; bottom:0; left:0; right:0; display:flex;
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  }
+  nav.tabbar button{
+    flex:1; background:none; border:none; color:var(--text-dim);
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+    padding:8px 4px; border-radius:10px; cursor:pointer;
+  }
+  nav.tabbar button.active{color:var(--steel-bright); background:rgba(127,163,196,0.1);}
+
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .install-hint{
+    font-size:11px; color:var(--text-dim); text-align:center; margin-top:18px; padding:0 10px; line-height:1.5;
+  }
+
+  .loading{padding:40px; text-align:center; color:var(--text-dim); font-size:13px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Beginner Strength Program</div>
+  <h1 class="stamp">Iron Log</h1>
+  <div class="sub">3x/week full body · linear progression</div>
+</header>
+
+<main>
+  <div id="loading" class="loading">Loading your log…</div>
+
+  <div id="today-panel" class="tab-panel">
+    <div class="day-banner">
+      <div>
+        <div class="label">Today's Workout</div>
+        <div class="workout-letter stamp" id="workout-letter">A</div>
+      </div>
+      <div class="streak">
+        <span class="count num" id="session-count">0</span>
+        sessions logged
+      </div>
+    </div>
+
+    <div id="lift-cards"></div>
+
+    <button class="save-btn" id="save-session-btn">Save Session</button>
+    <div class="install-hint">Tip: on Android, open this page in Chrome, tap ⋮ then "Add to Home screen" so it opens like an app.</div>
+  </div>
+
+  <div id="stretch-panel" class="tab-panel">
+    <div class="day-banner" style="background:linear-gradient(135deg, var(--surface-2), var(--surface));">
+      <div>
+        <div class="label">Rest Day Mobility</div>
+        <div class="workout-letter stamp" style="font-size:20px;">10-20 min, optional</div>
+      </div>
+    </div>
+    <div id="stretch-cards"></div>
+    <div class="install-hint">Static stretches like these are best on rest days or after training, not right before lifting — save dynamic warm-ups (leg swings, hip circles) for pre-workout instead.</div>
+  </div>
+
+  <div id="admin-panel" class="tab-panel">
+    <div class="day-banner" style="background:linear-gradient(135deg, var(--surface-2), var(--surface));">
+      <div>
+        <div class="label">Admin</div>
+        <div class="workout-letter stamp" style="font-size:20px;">Data controls</div>
+      </div>
+    </div>
+
+    <div class="lift-card">
+      <div class="lift-head">
+        <div class="lift-name">Current Data</div>
+      </div>
+      <div class="bw-target" id="admin-summary" style="margin-bottom:4px;">Loading…</div>
+    </div>
+
+    <div class="lift-card">
+      <div class="lift-head">
+        <div class="lift-name">Backup / Transfer</div>
+      </div>
+      <div class="bw-target" style="margin-bottom:10px;">Your data lives in this browser only. Export a backup file to keep it safe or move it to another device.</div>
+      <button class="save-btn" id="export-btn" style="background:var(--plate-green); margin-bottom:10px;">Export Backup (JSON)</button>
+      <button class="save-btn" id="import-btn" style="background:var(--surface-2); color:var(--text); border:1px solid var(--border);">Import Backup</button>
+      <input type="file" id="import-file" accept="application/json" style="display:none;">
+    </div>
+
+    <div class="lift-card">
+      <div class="lift-head">
+        <div class="lift-name">Reset Next Workout</div>
+      </div>
+      <div class="bw-target" style="margin-bottom:10px;">Force tomorrow's session back to Workout A, without deleting your logged history.</div>
+      <button class="save-btn" id="reset-next-btn" style="background:var(--plate-yellow); color:#0d1115;">Reset to Workout A</button>
+    </div>
+
+    <div class="lift-card">
+      <div class="lift-head">
+        <div class="lift-name">Clear All Data</div>
+      </div>
+      <div class="bw-target" style="margin-bottom:10px;">Permanently deletes every logged session and PR. This cannot be undone.</div>
+      <button class="save-btn" id="reset-all-btn" style="background:var(--iron-red);">Clear All Sessions</button>
+    </div>
+  </div>
+
+  <div id="history-panel" class="tab-panel">
+    <div class="pr-grid" id="pr-grid"></div>
+    <div id="session-list"></div>
+  </div>
+</main>
+
+<nav class="tabbar">
+  <button id="tab-today" class="active">Today</button>
+  <button id="tab-stretch">Stretch</button>
+  <button id="tab-history">History</button>
+  <button id="tab-admin">Admin</button>
+</nav>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'gains-tracker-data';
+
+  // ---------------------------------------------------------------------
+  // STORAGE ADAPTER
+  // Swap `mode` to 'remote' and fill in the remote block below once you
+  // wire up a backend (Supabase, Firebase, your own API, etc). Nothing
+  // else in this file needs to change — load()/save() just call
+  // StorageAdapter.get/set.
+  // ---------------------------------------------------------------------
+  const StorageAdapter = {
+    mode: 'local', // 'local' (browser localStorage) | 'remote' (your backend)
+
+    // Fill these in when you're ready to move to option 2:
+    remoteConfig: {
+      // Example for Supabase: baseUrl: 'https://YOUR_PROJECT.supabase.co/rest/v1', apiKey: 'YOUR_ANON_KEY'
+      // Example for Firebase: databaseUrl: 'https://YOUR_PROJECT.firebaseio.com'
+    },
+
+    async get(key){
+      if(this.mode === 'local'){
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      }
+      if(this.mode === 'remote'){
+        // --- Replace with your real backend call, e.g.:
+        // const res = await fetch(`${this.remoteConfig.baseUrl}/records?key=eq.${key}`, {
+        //   headers: { apikey: this.remoteConfig.apiKey }
+        // });
+        // if(!res.ok) return null;
+        // const rows = await res.json();
+        // return rows[0]?.value ?? null;
+        throw new Error('Remote storage mode is selected but remoteConfig is not implemented yet.');
+      }
+    },
+
+    async set(key, value){
+      if(this.mode === 'local'){
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      }
+      if(this.mode === 'remote'){
+        // --- Replace with your real backend call, e.g.:
+        // await fetch(`${this.remoteConfig.baseUrl}/records`, {
+        //   method: 'POST',
+        //   headers: { apikey: this.remoteConfig.apiKey, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' },
+        //   body: JSON.stringify({ key, value })
+        // });
+        // return true;
+        throw new Error('Remote storage mode is selected but remoteConfig is not implemented yet.');
+      }
+    }
+  };
+
+  const PROGRAM = {
+    A: [
+      {id:'squat', name:'Squat', type:'weight', sets:3, reps:5, start:20, inc:2.5, restrict:null, video:'https://www.youtube.com/watch?v=nhoikoUEI8U'},
+      {id:'bench', name:'Bench Press', type:'weight', sets:3, reps:5, start:20, inc:1.25, video:'https://www.youtube.com/watch?v=rxD321l2svE'},
+      {id:'row', name:'Barbell Row', type:'weight', sets:3, reps:5, start:20, inc:1.25, video:'https://www.youtube.com/watch?v=I0uhDZ06hrQ'},
+      {id:'plank', name:'Plank', type:'bodyweight', target:'3 x 30-45s', video:'https://www.youtube.com/watch?v=mwlp75MS6Rg'}
+    ],
+    B: [
+      {id:'squat', name:'Squat', type:'weight', sets:3, reps:5, start:20, inc:2.5, video:'https://www.youtube.com/watch?v=nhoikoUEI8U'},
+      {id:'ohp', name:'Overhead Press', type:'weight', sets:3, reps:5, start:20, inc:1.25, video:'https://www.youtube.com/watch?v=8dacy5hjaE8'},
+      {id:'deadlift', name:'Deadlift', type:'weight', sets:1, reps:5, start:20, inc:2.5, video:'https://www.youtube.com/watch?v=p2OPUi4xGrM'},
+      {id:'kneeraise', name:'Hanging Knee Raise', type:'bodyweight', target:'3 x 10-15', video:'https://www.youtube.com/watch?v=G6a5267YpHM'}
+    ]
+  };
+
+  const PICTOGRAMS = {
+    squat: `<svg viewBox="0 0 64 64" fill="none" stroke="#7fa3c4" stroke-width="3" stroke-linecap="round"><circle cx="32" cy="12" r="5" fill="#7fa3c4" stroke="none"/><line x1="32" y1="17" x2="30" y2="34"/><line x1="30" y1="34" x2="20" y2="46"/><line x1="30" y1="34" x2="42" y2="46"/><line x1="20" y1="46" x2="18" y2="58"/><line x1="42" y1="46" x2="44" y2="58"/><line x1="20" y1="17" x2="44" y2="17"/><circle cx="20" cy="17" r="3" fill="#b23a3a" stroke="none"/><circle cx="44" cy="17" r="3" fill="#b23a3a" stroke="none"/></svg>`,
+    bench: `<svg viewBox="0 0 64 64" fill="none" stroke="#7fa3c4" stroke-width="3" stroke-linecap="round"><rect x="10" y="42" width="44" height="5" rx="2" fill="none"/><circle cx="16" cy="36" r="5" fill="#7fa3c4" stroke="none"/><line x1="21" y1="38" x2="42" y2="42"/><line x1="28" y1="40" x2="28" y2="24"/><line x1="42" y1="42" x2="48" y2="26"/><circle cx="28" cy="24" r="3" fill="#b23a3a" stroke="none"/><circle cx="48" cy="24" r="3" fill="#b23a3a" stroke="none"/><line x1="28" y1="24" x2="48" y2="24"/></svg>`,
+    row: `<svg viewBox="0 0 64 64" fill="none" stroke="#7fa3c4" stroke-width="3" stroke-linecap="round"><circle cx="44" cy="14" r="5" fill="#7fa3c4" stroke="none"/><line x1="41" y1="18" x2="24" y2="30"/><line x1="24" y1="30" x2="20" y2="46"/><line x1="24" y1="30" x2="34" y2="46"/><line x1="20" y1="46" x2="18" y2="58"/><line x1="34" y1="46" x2="36" y2="58"/><line x1="30" y1="32" x2="16" y2="40"/><circle cx="16" cy="40" r="3" fill="#b23a3a" stroke="none"/></svg>`,
+    ohp: `<svg viewBox="0 0 64 64" fill="none" stroke="#7fa3c4" stroke-width="3" stroke-linecap="round"><circle cx="32" cy="14" r="5" fill="#7fa3c4" stroke="none"/><line x1="32" y1="19" x2="32" y2="42"/><line x1="32" y1="42" x2="24" y2="58"/><line x1="32" y1="42" x2="40" y2="58"/><line x1="32" y1="22" x2="18" y2="8"/><line x1="32" y1="22" x2="46" y2="8"/><circle cx="18" cy="8" r="3" fill="#b23a3a" stroke="none"/><circle cx="46" cy="8" r="3" fill="#b23a3a" stroke="none"/><line x1="18" y1="8" x2="46" y2="8"/></svg>`,
+    deadlift: `<svg viewBox="0 0 64 64" fill="none" stroke="#7fa3c4" stroke-width="3" stroke-linecap="round"><circle cx="38" cy="12" r="5" fill="#7fa3c4" stroke="none"/><line x1="36" y1="17" x2="26" y2="34"/><line x1="26" y1="34" x2="22" y2="48"/><line x1="26" y1="34" x2="36" y2="48"/><line x1="22" y1="48" x2="20" y2="58"/><line x1="36" y1="48" x2="38" y2="58"/><line x1="34" y1="20" x2="16" y2="52"/><circle cx="16" cy="52" r="3" fill="#b23a3a" stroke="none"/></svg>`,
+    plank: `<svg viewBox="0 0 64 64" fill="none" stroke="#7fa3c4" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="30" r="5" fill="#7fa3c4" stroke="none"/><line x1="17" y1="32" x2="50" y2="38"/><line x1="20" y1="34" x2="16" y2="46"/><line x1="46" y1="37" x2="50" y2="50"/><line x1="20" y1="34" x2="18" y2="20"/></svg>`,
+    kneeraise: `<svg viewBox="0 0 64 64" fill="none" stroke="#7fa3c4" stroke-width="3" stroke-linecap="round"><line x1="14" y1="10" x2="50" y2="10"/><circle cx="14" cy="10" r="3" fill="#b23a3a" stroke="none"/><circle cx="50" cy="10" r="3" fill="#b23a3a" stroke="none"/><circle cx="32" cy="18" r="5" fill="#7fa3c4" stroke="none"/><line x1="32" y1="23" x2="32" y2="36"/><line x1="32" y1="36" x2="24" y2="34"/><line x1="24" y1="34" x2="26" y2="44"/><line x1="32" y1="36" x2="40" y2="34"/><line x1="40" y1="34" x2="38" y2="44"/></svg>`
+  };
+
+  const PLATES = [
+    {w:25, cls:'p25'}, {w:20, cls:'p20'}, {w:15, cls:'p15'},
+    {w:10, cls:'p10'}, {w:5, cls:'p5'}, {w:2.5, cls:'p2_5'}, {w:1.25, cls:'p1_25'}
+  ];
+
+  const STRETCH_ROUTINE = [
+    {id:'couch', name:'Couch Stretch', target:'2 x 30-45s each side', note:'Hip flexors & quads — tight from squat/deadlift', video:'https://www.youtube.com/watch?v=XO9wvUhmf-Y'},
+    {id:'ninety', name:'90/90 Hip Stretch', target:'2 x 30s each side', note:'Deep hip rotation — helps squat depth', video:'https://www.youtube.com/watch?v=t4Zz6-aG8Iw'},
+    {id:'hamstring', name:'Standing Hamstring Stretch', target:'2 x 30s each side', note:'Posterior chain — helps deadlift setup', video:'https://www.youtube.com/watch?v=9ESpoUPqpFw'},
+    {id:'openbook', name:'Open Book (T-Spine Rotation)', target:'10 reps each side', note:'Upper back mobility — helps bar path & posture', video:'https://www.youtube.com/watch?v=5TdmVlQe64c'},
+    {id:'doorway', name:'Doorway Pec Stretch', target:'2 x 30s each side', note:'Chest & shoulders — tight from bench/OHP', video:'https://www.youtube.com/watch?v=M850sCj9LHQ'},
+    {id:'ankle', name:'Knee-to-Wall Ankle Stretch', target:'2 x 10 each side', note:'Ankle dorsiflexion — helps squat depth', video:'https://www.youtube.com/watch?v=pSMPd12mrg0'}
+  ];
+
+  const STRETCH_ICON = `<svg viewBox="0 0 64 64" fill="none" stroke="#7fa3c4" stroke-width="3" stroke-linecap="round"><circle cx="24" cy="12" r="5" fill="#7fa3c4" stroke="none"/><line x1="24" y1="17" x2="26" y2="34"/><line x1="26" y1="34" x2="16" y2="48"/><line x1="26" y1="34" x2="40" y2="40"/><line x1="16" y1="48" x2="12" y2="58"/><line x1="40" y1="40" x2="50" y2="30"/><line x1="26" y1="20" x2="14" y2="26"/></svg>`;
+
+  function renderStretch(){
+    const container = document.getElementById('stretch-cards');
+    if(container.dataset.rendered) return;
+    container.innerHTML = STRETCH_ROUTINE.map(s => `
+      <div class="lift-card">
+        <div class="lift-head">
+          <div class="lift-name">${s.name}</div>
+          <div class="lift-scheme">${s.target}</div>
+        </div>
+        <div class="lift-body">
+          <div class="pictogram">${STRETCH_ICON}</div>
+          <div class="lift-main">
+            <div class="bw-target" style="margin-bottom:2px;">${s.note}</div>
+            <a class="form-link" href="${s.video}" target="_blank" rel="noopener noreferrer"><span class="play-icon"></span>Watch form guide</a>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    container.dataset.rendered = 'true';
+  }
+
+  let state = { sessions: [] };
+  let currentWorkout = 'A';
+  let liftUIState = {}; // id -> {weight, result: 'hit'|'miss'|null}
+  let activeTab = 'today';
+
+  async function load(){
+    try{
+      const data = await StorageAdapter.get(STORAGE_KEY);
+      if(data){
+        state = data;
+      }
+    }catch(e){
+      state = { sessions: [] };
+    }
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('today-panel').classList.add('active');
+    computeNextWorkout();
+    renderToday();
+    renderHistory();
+    renderAdmin();
+  }
+
+  async function save(){
+    try{
+      await StorageAdapter.set(STORAGE_KEY, state);
+    }catch(e){
+      console.error('Save failed', e);
+      alert('Could not save — please try again.');
+    }
+  }
+
+  function computeNextWorkout(){
+    if(state.forceNextWorkout){
+      currentWorkout = state.forceNextWorkout;
+      return;
+    }
+    if(state.sessions.length === 0){ currentWorkout = 'A'; return; }
+    const last = state.sessions[state.sessions.length - 1];
+    currentWorkout = last.workout === 'A' ? 'B' : 'A';
+  }
+
+  function renderAdmin(){
+    const summary = document.getElementById('admin-summary');
+    const count = state.sessions.length;
+    if(count === 0){
+      summary.textContent = 'No sessions logged yet.';
+      return;
+    }
+    const last = state.sessions[state.sessions.length - 1];
+    const lastDate = new Date(last.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    summary.textContent = `${count} session${count === 1 ? '' : 's'} logged. Last: Workout ${last.workout} on ${lastDate}.`;
+  }
+
+  document.getElementById('export-btn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `iron-log-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('import-btn').addEventListener('click', () => {
+    document.getElementById('import-file').click();
+  });
+
+  document.getElementById('import-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if(!parsed || !Array.isArray(parsed.sessions)) throw new Error('Invalid backup file');
+      if(!confirm('This will replace your current data with the imported backup. Continue?')){
+        e.target.value = '';
+        return;
+      }
+      state = parsed;
+      liftUIState = {};
+      await save();
+      computeNextWorkout();
+      renderToday();
+      renderHistory();
+      renderAdmin();
+      alert('Backup imported successfully.');
+    }catch(err){
+      alert('Could not import file — make sure it\'s a valid Iron Log backup JSON.');
+    }
+    e.target.value = '';
+  });
+
+  document.getElementById('reset-next-btn').addEventListener('click', async () => {
+    if(!confirm("Force your next session back to Workout A? Your logged history stays intact.")) return;
+    state.forceNextWorkout = 'A';
+    liftUIState = {};
+    computeNextWorkout();
+    state.forceNextWorkout = null; // one-time override, consumed once applied
+    await save();
+    renderToday();
+    renderAdmin();
+    alert('Next workout reset to A.');
+  });
+
+  document.getElementById('reset-all-btn').addEventListener('click', async () => {
+    if(!confirm("This will permanently delete ALL logged sessions and PRs. This cannot be undone. Continue?")) return;
+    if(!confirm("Are you absolutely sure? This is your last chance to cancel.")) return;
+    state = { sessions: [], forceNextWorkout: null };
+    liftUIState = {};
+    await save();
+    computeNextWorkout();
+    renderToday();
+    renderHistory();
+    renderAdmin();
+    alert('All data cleared.');
+  });
+
+  function getLiftHistory(id){
+    const hist = [];
+    for(const s of state.sessions){
+      const l = s.lifts.find(x => x.id === id);
+      if(l && l.type === 'weight') hist.push(l);
+    }
+    return hist;
+  }
+
+  function suggestWeight(def){
+    const hist = getLiftHistory(def.id);
+    if(hist.length === 0) return def.start;
+    const last = hist[hist.length - 1];
+    // count trailing misses at same weight
+    let missStreak = 0;
+    for(let i = hist.length - 1; i >= 0; i--){
+      if(hist[i].weight === last.weight && hist[i].result === 'miss') missStreak++;
+      else break;
+    }
+    if(missStreak >= 3){
+      return Math.round((last.weight * 0.9) / 1.25) * 1.25; // deload 10%, round to nearest 1.25
+    }
+    if(last.result === 'hit') return last.weight + def.inc;
+    return last.weight; // repeat
+  }
+
+  function needsDeloadNote(def){
+    const hist = getLiftHistory(def.id);
+    if(hist.length === 0) return false;
+    const last = hist[hist.length - 1];
+    let missStreak = 0;
+    for(let i = hist.length - 1; i >= 0; i--){
+      if(hist[i].weight === last.weight && hist[i].result === 'miss') missStreak++;
+      else break;
+    }
+    return missStreak >= 3;
+  }
+
+  function decomposePlates(totalWeight){
+    // weight on each side of a 20kg bar
+    let perSide = (totalWeight - 20) / 2;
+    if(perSide < 0) perSide = 0;
+    const used = [];
+    for(const p of PLATES){
+      while(perSide >= p.w - 0.001){
+        used.push(p.cls);
+        perSide -= p.w;
+      }
+    }
+    return used;
+  }
+
+  function renderToday(){
+    document.getElementById('workout-letter').textContent = currentWorkout;
+    document.getElementById('session-count').textContent = state.sessions.length;
+
+    const container = document.getElementById('lift-cards');
+    container.innerHTML = '';
+    const lifts = PROGRAM[currentWorkout];
+
+    lifts.forEach(def => {
+      if(def.type === 'weight'){
+        if(!liftUIState[def.id] || liftUIState[def.id]._workout !== currentWorkout){
+          liftUIState[def.id] = { weight: suggestWeight(def), result: null, _workout: currentWorkout };
+        }
+        const ui = liftUIState[def.id];
+        const card = document.createElement('div');
+        card.className = 'lift-card';
+        const plateClasses = decomposePlates(ui.weight);
+        const plateHtml = plateClasses.length
+          ? plateClasses.map(c => `<div class="plate ${c}"></div>`).join('')
+          : '<span style="font-size:11px;color:var(--text-dim)">bar only</span>';
+
+        card.innerHTML = `
+          <div class="lift-head">
+            <div class="lift-name">${def.name}</div>
+            <div class="lift-scheme">${def.sets} x ${def.reps}</div>
+          </div>
+          <div class="lift-body">
+            <div class="pictogram">${PICTOGRAMS[def.id] || ''}</div>
+            <div class="lift-main">
+              <div class="plate-bar">
+                <div class="plates">${plateHtml}</div>
+                <div class="bar-line"></div>
+                <div class="plates">${plateHtml}</div>
+              </div>
+              <div class="weight-row">
+                <div class="weight-input-wrap">
+                  <input class="weight-input num" type="number" step="1.25" value="${ui.weight}" data-lift="${def.id}">
+                  <span class="unit">kg</span>
+                </div>
+              </div>
+              <div class="suggested-tag">suggested from your last session</div>
+            </div>
+          </div>
+          ${needsDeloadNote(def) ? '<div class="deload-note">Missed this weight 3x — suggested a 10% deload. Adjust if needed.</div>' : ''}
+          <a class="form-link" href="${def.video}" target="_blank" rel="noopener noreferrer"><span class="play-icon"></span>Watch form guide</a>
+          <div class="toggle-row" data-lift="${def.id}">
+            <button class="toggle-btn hit-btn" data-lift="${def.id}" data-result="hit">Hit all reps</button>
+            <button class="toggle-btn miss-btn" data-lift="${def.id}" data-result="miss">Missed reps</button>
+          </div>
+        `;
+        container.appendChild(card);
+      } else {
+        if(!liftUIState[def.id] || liftUIState[def.id]._workout !== currentWorkout){
+          liftUIState[def.id] = { result: null, _workout: currentWorkout };
+        }
+        const card = document.createElement('div');
+        card.className = 'lift-card bw-card';
+        card.innerHTML = `
+          <div class="lift-head">
+            <div class="lift-name">${def.name}</div>
+            <div class="bw-target">${def.target}</div>
+          </div>
+          <div class="lift-body">
+            <div class="pictogram">${PICTOGRAMS[def.id] || ''}</div>
+            <div class="lift-main">
+              <a class="form-link" href="${def.video}" target="_blank" rel="noopener noreferrer"><span class="play-icon"></span>Watch form guide</a>
+            </div>
+          </div>
+          <div class="toggle-row" data-lift="${def.id}">
+            <button class="toggle-btn hit-btn" data-lift="${def.id}" data-result="hit">Done</button>
+            <button class="toggle-btn miss-btn" data-lift="${def.id}" data-result="miss">Skipped</button>
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    });
+
+    container.querySelectorAll('.weight-input').forEach(inp => {
+      inp.addEventListener('input', (e) => {
+        const id = e.target.dataset.lift;
+        liftUIState[id].weight = parseFloat(e.target.value) || 0;
+        const card = e.target.closest('.lift-card');
+        const plateClasses = decomposePlates(liftUIState[id].weight);
+        const plateHtml = plateClasses.length
+          ? plateClasses.map(c => `<div class="plate ${c}"></div>`).join('')
+          : '<span style="font-size:11px;color:var(--text-dim)">bar only</span>';
+        card.querySelectorAll('.plates').forEach(p => p.innerHTML = plateHtml);
+      });
+    });
+
+    container.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.lift;
+        const result = btn.dataset.result;
+        liftUIState[id].result = result;
+        const row = btn.closest('.toggle-row');
+        row.querySelectorAll('.toggle-btn').forEach(b => {
+          b.classList.remove('active-hit', 'active-miss');
+        });
+        btn.classList.add(result === 'hit' ? 'active-hit' : 'active-miss');
+        updateSaveButtonState();
+      });
+    });
+
+    updateSaveButtonState();
+  }
+
+  function updateSaveButtonState(){
+    const lifts = PROGRAM[currentWorkout];
+    const allSet = lifts.every(def => liftUIState[def.id] && liftUIState[def.id].result);
+    document.getElementById('save-session-btn').disabled = !allSet;
+  }
+
+  document.getElementById('save-session-btn').addEventListener('click', async () => {
+    const lifts = PROGRAM[currentWorkout];
+    const session = {
+      date: new Date().toISOString(),
+      workout: currentWorkout,
+      lifts: lifts.map(def => {
+        const ui = liftUIState[def.id];
+        return def.type === 'weight'
+          ? { id: def.id, name: def.name, type: 'weight', weight: ui.weight, result: ui.result }
+          : { id: def.id, name: def.name, type: 'bodyweight', result: ui.result };
+      })
+    };
+    state.sessions.push(session);
+    await save();
+    liftUIState = {};
+    computeNextWorkout();
+    renderToday();
+    renderHistory();
+    document.getElementById('save-session-btn').textContent = 'Saved ✓';
+    setTimeout(() => { document.getElementById('save-session-btn').textContent = 'Save Session'; }, 1500);
+  });
+
+  function renderHistory(){
+    const prGrid = document.getElementById('pr-grid');
+    const weightLiftIds = [...new Set([...PROGRAM.A, ...PROGRAM.B].filter(l => l.type === 'weight').map(l => l.id))];
+    const nameMap = {};
+    [...PROGRAM.A, ...PROGRAM.B].forEach(l => nameMap[l.id] = l.name);
+
+    prGrid.innerHTML = weightLiftIds.map(id => {
+      const hist = getLiftHistory(id);
+      const pr = hist.length ? Math.max(...hist.map(h => h.weight)) : null;
+      return `
+        <div class="pr-card">
+          <div class="pr-name">${nameMap[id]}</div>
+          <div class="pr-val">${pr !== null ? pr : '—'} ${pr !== null ? '<span class="u">kg</span>' : ''}</div>
+        </div>
+      `;
+    }).join('');
+
+    const listEl = document.getElementById('session-list');
+    if(state.sessions.length === 0){
+      listEl.innerHTML = `<div class="empty-state"><div class="big">No sessions logged yet</div>Log your first workout from the Today tab.</div>`;
+      return;
+    }
+    const sorted = [...state.sessions].reverse();
+    listEl.innerHTML = sorted.map(s => {
+      const d = new Date(s.date);
+      const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      const liftsHtml = s.lifts.map(l => {
+        const resClass = l.result === 'hit' ? 'hit' : 'miss';
+        const resLabel = l.type === 'weight'
+          ? `${l.weight}kg ${l.result === 'hit' ? '✓' : '✗'}`
+          : (l.result === 'hit' ? 'Done ✓' : 'Skipped ✗');
+        return `<div class="session-lift-row"><span class="name">${l.name}</span><span class="res ${resClass}">${resLabel}</span></div>`;
+      }).join('');
+      return `
+        <div class="session-item">
+          <div class="s-head"><span>${dateStr}</span><span class="w-letter">Workout ${s.workout}</span></div>
+          <div class="session-lifts">${liftsHtml}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function hideAllPanels(){
+    document.getElementById('today-panel').classList.remove('active');
+    document.getElementById('stretch-panel').classList.remove('active');
+    document.getElementById('history-panel').classList.remove('active');
+    document.getElementById('admin-panel').classList.remove('active');
+    document.getElementById('tab-today').classList.remove('active');
+    document.getElementById('tab-stretch').classList.remove('active');
+    document.getElementById('tab-history').classList.remove('active');
+    document.getElementById('tab-admin').classList.remove('active');
+  }
+
+  document.getElementById('tab-today').addEventListener('click', () => {
+    hideAllPanels();
+    document.getElementById('today-panel').classList.add('active');
+    document.getElementById('tab-today').classList.add('active');
+  });
+  document.getElementById('tab-stretch').addEventListener('click', () => {
+    hideAllPanels();
+    document.getElementById('stretch-panel').classList.add('active');
+    document.getElementById('tab-stretch').classList.add('active');
+    renderStretch();
+  });
+  document.getElementById('tab-history').addEventListener('click', () => {
+    hideAllPanels();
+    document.getElementById('history-panel').classList.add('active');
+    document.getElementById('tab-history').classList.add('active');
+    renderHistory();
+  });
+  document.getElementById('tab-admin').addEventListener('click', () => {
+    hideAllPanels();
+    document.getElementById('admin-panel').classList.add('active');
+    document.getElementById('tab-admin').classList.add('active');
+    renderAdmin();
+  });
+
+  load();
+})();
+</script>
+
+</body>
+</html>
